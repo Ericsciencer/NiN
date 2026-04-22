@@ -1,51 +1,50 @@
-# VGG
+# NiN
 ### 选择语言 | Language
 [中文简介](#简介) | [English](#Introduction)
 
 ### 结果 | Result
 
-<img width="2480" height="1914" alt="vgg16_cifar_training_curve" src="https://github.com/user-attachments/assets/096d4f96-c10f-43ce-8e07-d6be367c819b" />
-
 
 ---
 
 ## 简介
-VGG 是由牛津大学视觉几何组（Visual Geometry Group, VGG）的 Karen Simonyan 和 Andrew Zisserman 于 2014 年提出的经典深度卷积神经网络，相关成果发表于《Very Deep Convolutional Networks for Large-Scale Image Recognition》。它在当年的 ImageNet 大规模图像分类竞赛中，将 Top-5 错误率从 AlexNet 的 15.3% 进一步降至 7.3%，以压倒性优势获得亚军。其核心架构首次系统性地证明了**增加网络深度是提升视觉任务性能的关键因素**，并确立了"统一使用3×3小卷积核堆叠+逐层通道翻倍+最大池化降维"的标准CNN设计范式。VGG的设计思想极其简洁且具有极强的可扩展性，不仅成为了后续所有深度卷积神经网络的基础架构模板，更被广泛应用于目标检测、语义分割、图像生成等几乎所有计算机视觉领域，是深度学习发展史上最具影响力的模型之一。
+NiN（Network in Network）是由 Min Lin、Qiang Chen 与 Shuicheng Yan 于 2013 年提出的革命性深度卷积神经网络，相关成果发表于《Network In Network》。它突破了传统 CNN“卷积层堆叠+全连接层分类”的单一范式，首次提出**MLPConv（微网络卷积）** 模块与**全局平均池化**两大核心设计，用更灵活的非线性特征提取器替代了线性卷积核，同时彻底消除了全连接层带来的巨大参数量与过拟合风险。NiN 不仅将 CIFAR-10 数据集的分类错误率大幅降低至 10.41%（当时最优），更开创了 1×1 卷积在深度学习中的广泛应用，为后续 GoogLeNet、ResNet、MobileNet 等经典轻量级与高性能模型奠定了关键技术基础。
 
 ## 架构
-VGG的核心架构为"模块化卷积块堆叠"的端到端深度卷积神经网络，整体分为「卷积特征提取模块」和「全连接分类模块」两大核心部分。原论文提出了6种不同深度的网络变体，其中VGG16（13个卷积层+3个全连接层）和VGG19（16个卷积层+3个全连接层）是最常用的两个版本。原论文标准输入为224×224分辨率的3通道RGB图像，最终输出对应分类类别的预测概率，具体结构与设计如下：
--  **特征提取模块（卷积层）**：由5个连续的卷积块组成，每个卷积块内部堆叠2-4个3×3卷积核（步长1，填充1），所有卷积层后均接ReLU非线性激活函数；每个卷积块末尾接一个2×2步长2的最大池化层，将特征图尺寸减半。通道数从第一个卷积块的64开始，每经过一个池化层通道数翻倍，最终达到512。这种设计使得两个3×3卷积的感受野等价于一个5×5卷积，三个3×3卷积的感受野等价于一个7×7卷积，同时大幅减少了参数量并增加了网络的非线性表达能力。
--  **分类输出模块（3个全连接层）**：先通过自适应平均池化将卷积输出的特征图固定为7×7，再通过flatten展平为一维向量。前两层全连接层均为4096维输出，搭配ReLU激活与Dropout（随机丢弃率0.5）抑制过拟合；最后一层全连接层为输出层，维度匹配分类任务的类别数（原论文ImageNet任务为1000维），输出各类别的预测得分。
+NiN 的核心架构为**全卷积式端到端深度神经网络**，整体由**堆叠的 MLPConv 特征提取模块**与**全局平均池化分类模块**构成，完全摒弃了传统的全连接层。原论文标准输入为 224×224 分辨率的 3 通道 RGB 图像，最终输出对应分类类别的预测概率，具体结构与设计如下：
+- **特征提取模块（4 个 MLPConv 块）**：每个 MLPConv 块由 1 个标准卷积层 + 2 个连续的 1×1 卷积层组成，其中 1×1 卷积层模拟了全连接层的非线性特征组合能力，能够在保持空间结构的同时实现跨通道的信息交互。前 3 个 MLPConv 块后均接 3×3 步长 2 的重叠最大池化层进行尺寸压缩，逐步提取从边缘、纹理到深层语义的多级特征。
+- **分类输出模块（全局平均池化）**：最后一个 MLPConv 块的输出通道数直接设置为分类任务的类别数（原论文 ImageNet 任务为 1000 维），随后通过全局平均池化将每个通道的特征图平均为一个标量，直接对应各类别的预测得分，无需展平操作与全连接层。
 
-<img width="1094" height="629" alt="image" src="https://github.com/user-attachments/assets/d3ba607f-30aa-4edc-b7db-8f604a80baff" />
-<img width="636" height="545" alt="image" src="https://github.com/user-attachments/assets/99679924-39bb-4ffe-803c-3c4c233de148" />
+该架构通过 MLPConv 增强了局部特征的非线性表达能力，通过全局平均池化大幅减少了参数量并天然抑制过拟合，其“用卷积替代全连接”的设计思想成为了现代轻量级 CNN 的核心准则。
+
+<img width="461" height="171" alt="image" src="https://github.com/user-attachments/assets/3e71abf2-9657-405c-98cf-83894645f7b0" />
 
 
-**注意**：我们使用的是数据集CIFAR-10，它是10类数据，并且不同于原文献，由于 CIFAR-10 图像尺寸（32×32）远小于原论文的 224×224，我们会对网络结构做微小适配（主要是去掉后2个卷积块，精简全连接层维度），但核心架构（3×3卷积堆叠+通道数翻倍+ReLU+Dropout）完全保留。
+**注意**：我们使用的是数据集 CIFAR-10，它是 10 类数据，并且不同于原文献，由于 CIFAR-10 图像尺寸（32×32）远小于原论文的 224×224，我们会对网络结构做微小适配（主要是缩小卷积核和步长，调整通道数），但核心架构（MLPConv 模块 + 全局平均池化 + 无全连接层）完全保留。
 
 ## 数据集
-我们使用的是数据集CIFAR-10，是一个更接近普适物体的彩色图像数据集。CIFAR-10 是由Hinton 的学生Alex Krizhevsky 和Ilya Sutskever 整理的一个用于识别普适物体的小型数据集。一共包含10 个类别的RGB 彩色图片：飞机（ airplane ）、汽车（ automobile ）、鸟类（ bird ）、猫（ cat ）、鹿（ deer ）、狗（ dog ）、蛙类（ frog ）、马（ horse ）、船（ ship ）和卡车（ truck ）。每个图片的尺寸为32 × 32 ，每个类别有6000个图像，数据集中一共有50000 张训练图片和10000 张测试图片。
+我们使用的是数据集 CIFAR-10，是一个更接近普适物体的彩色图像数据集。CIFAR-10 是由 Hinton 的学生 Alex Krizhevsky 和 Ilya Sutskever 整理的一个用于识别普适物体的小型数据集。一共包含 10 个类别的 RGB 彩色图片：飞机（ airplane ）、汽车（ automobile ）、鸟类（ bird ）、猫（ cat ）、鹿（ deer ）、狗（ dog ）、蛙类（ frog ）、马（ horse ）、船（ ship ）和卡车（ truck ）。每个图片的尺寸为 32 × 32 ，每个类别有 6000 个图像，数据集中一共有 50000 张训练图片和 10000 张测试图片。
 数据集链接为：https://www.cs.toronto.edu/~kriz/cifar.html
 
-它不同于我们常见的图片存储格式，而是用二进制优化了储存，当然我们也可以将其复刻出来为PNG等图片格式，但那会很大，我们的目标是神经网络，这里不做细致解析数据集，如果你想了解该数据集请观看链接：https://cloud.tencent.com/developer/article/2150614
+它不同于我们常见的图片存储格式，而是用二进制优化了储存，当然我们也可以将其复刻出来为 PNG 等图片格式，但那会很大，我们的目标是神经网络，这里不做细致解析数据集，如果你想了解该数据集请观看链接：https://cloud.tencent.com/developer/article/2150614
 
 ---
 
 ## Introduction
-VGG, a classic deep convolutional neural network proposed in 2014 by Karen Simonyan and Andrew Zisserman from the Visual Geometry Group (VGG) at the University of Oxford, with its findings published in "Very Deep Convolutional Networks for Large-Scale Image Recognition". It achieved a remarkable result in the ImageNet large-scale image classification competition that year, reducing the Top-5 error rate from 15.3% of AlexNet to 7.3%. Its core architecture systematically proved for the first time that **increasing network depth is the key factor to improve the performance of visual tasks**, and established the standard CNN design paradigm of "uniformly using 3×3 small convolution kernels for stacking + doubling the number of channels layer by layer + max pooling for dimensionality reduction". The design idea of VGG is extremely concise and highly scalable. It has not only become the basic architecture template for all subsequent deep convolutional neural networks, but also been widely applied to almost all computer vision fields such as object detection, semantic segmentation, and image generation. It is one of the most influential models in the history of deep learning.
+NiN (Network in Network), a revolutionary deep convolutional neural network proposed in 2013 by Min Lin, Qiang Chen, and Shuicheng Yan, with its findings published in "Network In Network", broke through the single paradigm of traditional CNN "convolutional layer stacking + fully connected layer classification". It first proposed two core designs: **MLPConv (Multi-Layer Perceptron Convolution)** module and **Global Average Pooling**, replacing linear convolution kernels with more flexible nonlinear feature extractors, and completely eliminating the huge number of parameters and overfitting risks brought by fully connected layers. NiN not only significantly reduced the classification error rate on the CIFAR-10 dataset to 10.41% (the best at that time), but also pioneered the widespread application of 1×1 convolution in deep learning, laying a key technical foundation for subsequent classic lightweight and high-performance models such as GoogLeNet, ResNet, and MobileNet.
 
 ## Architecture
-The core architecture of VGG is an **end-to-end deep convolutional neural network with "modular convolution block stacking"**, which is divided into two main parts: a "convolutional feature extraction module" and a "fully connected classification module". The original paper proposed 6 network variants with different depths, among which **VGG16 (13 convolutional layers + 3 fully connected layers)** and **VGG19 (16 convolutional layers + 3 fully connected layers)** are the two most commonly used versions. The original paper's standard input was a 224×224 resolution 3-channel RGB image, and the final output was the predicted probability of the corresponding classification category. The specific structure and design are as follows:
+The core architecture of NiN is a **fully convolutional end-to-end deep neural network**, which is composed of **stacked MLPConv feature extraction modules** and a **global average pooling classification module**, completely abandoning the traditional fully connected layers. The original paper's standard input was a 224×224 resolution 3-channel RGB image, and the final output was the predicted probability of the corresponding classification category. The specific structure and design are as follows:
 
-- **Feature Extraction Module (Convolutional Layers)**: It consists of 5 consecutive convolution blocks. Each convolution block stacks 2-4 3×3 convolution kernels (stride 1, padding 1), and all convolutional layers are followed by a ReLU nonlinear activation function. At the end of each convolution block, a 2×2 max pooling layer with stride 2 is connected to halve the size of the feature map. The number of channels starts from 64 in the first convolution block and doubles after each pooling layer, finally reaching 512. This design makes the receptive field of two 3×3 convolutions equivalent to one 5×5 convolution, and the receptive field of three 3×3 convolutions equivalent to one 7×7 convolution, while greatly reducing the number of parameters and increasing the nonlinear expression ability of the network.
+- **Feature Extraction Module (4 MLPConv Blocks)**: Each MLPConv block consists of 1 standard convolutional layer + 2 consecutive 1×1 convolutional layers. The 1×1 convolutional layers simulate the nonlinear feature combination ability of fully connected layers, enabling cross-channel information interaction while maintaining the spatial structure. Each of the first 3 MLPConv blocks is followed by a 3×3 overlapping max pooling layer with a stride of 2 for size compression, gradually extracting multi-level features from edges and textures to deep semantics.
+- **Classification Output Module (Global Average Pooling)**: The number of output channels of the last MLPConv block is directly set to the number of categories in the classification task (1000 dimensions for the ImageNet task in the original paper). Then, global average pooling averages each channel's feature map into a scalar, which directly corresponds to the prediction score of each category, without flattening operations or fully connected layers.
 
-- **Classification Output Module (3 Fully Connected Layers)**: First, the feature map output by the convolution is fixed to 7×7 through adaptive average pooling, and then flattened into a one-dimensional vector through flatten. The first two fully connected layers are both 4096-dimensional outputs, combined with ReLU activation and Dropout (random drop rate of 0.5) to suppress overfitting. The last fully connected layer is the output layer, and the dimension matches the number of categories in the classification task (1000 dimensions for the ImageNet task in the original paper), outputting the prediction scores for each category.
+This architecture enhances the nonlinear expression ability of local features through MLPConv, greatly reduces the number of parameters and naturally suppresses overfitting through global average pooling. Its design idea of "replacing fully connected layers with convolutions" has become the core criterion of modern lightweight CNNs.
 
-<img width="1094" height="629" alt="image" src="https://github.com/user-attachments/assets/1493590c-85d8-4a32-b7da-eaf20eaf5b38" />
-<img width="1145" height="540" alt="image" src="https://github.com/user-attachments/assets/7b733b79-6a51-4f62-adab-6a776851bb7b" />
+<img width="461" height="171" alt="image" src="https://github.com/user-attachments/assets/ed1097d0-8df5-4878-bd05-2687a7dde9b6" />
 
 
-**Note:** We use the CIFAR-10 dataset, which is a 10-class dataset. Unlike the original paper, the image size of CIFAR-10 (32×32) is much smaller than the 224×224 in the original paper. We will make minor adaptations to the network structure (mainly removing the last 2 convolution blocks and simplifying the dimension of the fully connected layers), but the core architecture (3×3 convolution stacking + doubling the number of channels + ReLU + Dropout) will be completely retained.
+**Note:** We use the CIFAR-10 dataset, which is a 10-class dataset. Unlike the original paper, the image size of CIFAR-10 (32×32) is much smaller than the 224×224 in the original paper. We will make minor adaptations to the network structure (mainly reducing the convolution kernels and stride, adjusting the number of channels), but the core architecture (MLPConv module + global average pooling + no fully connected layers) will be completely retained.
 
 ## Dataset
 We used the CIFAR-10 dataset, a color image dataset that more closely approximates common objects. CIFAR-10 is a small dataset for recognizing common objects, compiled by Hinton's students Alex Krizhevsky and Ilya Sutskever. It contains RGB color images for 10 categories: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, and truck. Each image is 32 × 32 pixels, with 6000 images per category. The dataset contains 50,000 training images and 10,000 test images.
@@ -56,4 +55,4 @@ It differs from common image storage formats, using binary-optimized storage. Wh
 
 ---
 ## 原文章 | Original article
-Simonyan, Karen, and Andrew Zisserman. "Very deep convolutional networks for large-scale image recognition." arXiv preprint arXiv:1409.1556 (2014).
+Lin, Min, Qiang Chen, and Shuicheng Yan. "Network in network." arXiv preprint arXiv:1312.4400 (2013).
