@@ -3,6 +3,7 @@
 [中文简介](#简介) | [English](#Introduction)
 
 ### 结果 | Result
+<img width="2480" height="1914" alt="nin_training_curve_fixed" src="https://github.com/user-attachments/assets/5468d75f-699c-48e0-aac6-94fd686283d3" />
 
 
 ---
